@@ -3,95 +3,54 @@
 namespace MartenaSoft\NestedSets\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use MartenaSoft\NestedSets\Entity\NodeInterface;
+use MartenaSoft\NestedSets\Exception\NestedSetsException;
 
-abstract class AbstractBase extends ServiceEntityRepository
+abstract class AbstractBase
 {
-    protected string $alias = 'ns';
+    private EntityManagerInterface $entityManager;
+    private string $tableName;
+    private string $entityClassName;
 
-    public function getTableName(): string
+    public function __construct(EntityManagerInterface $entityManager)
     {
-        return $this->getClassMetadata()->getTableName();
+        $this->entityManager = $entityManager;
     }
 
-    public function execQuery(string $sql): ?int
+    public function setEntityClassName(string $entityClassName): void
     {
-        print $sql;
-        try {
-            return $this->getEntityManager()->getConnection()->executeQuery($sql)->rowCount();
-        } catch (\Throwable $exception) {
-            throw $exception;
+        if (!is_subclass_of(new $entityClassName(), NodeInterface::class)) {
+            throw new NestedSetsException(
+                sprintf(
+                    "The class %s not implement interface %s",
+                    $entityClassName,
+                    NodeInterface::class
+                )
+            );
         }
+        $this->entityClassName = $entityClassName;
+        $this->tableName = $this->getEntityManager()->getClassMetadata($entityClassName)->getTableName();
     }
 
-    public function beginTransaction(): void
+    protected function getEntity(int $id, int $lft, int $rgt, int $lvl, int $tree): ?NodeInterface
     {
-        $this->getEntityManager()->beginTransaction();
+        $node = new $this->entityClassName();
+        $node->setId($id)
+            ->setLft($lft)
+            ->setRgt($rgt)
+            ->setLvl($lvl)
+            ->setTree($tree);
     }
 
-    public function commit(): void
+    protected function getTableName(): string
     {
-        $this->getEntityManager()->commit();
+        return $this->tableName;
     }
 
-    public function rollback(): void
+    protected function getEntityManager(): EntityManagerInterface
     {
-        $this->getEntityManager()->rollback();
+        return $this->entityManager;
     }
-
-    public function getItemsQueryBuilder(NodeInterface $nestedSetEntity): QueryBuilder
-    {
-        $queryBuilder = $this->createQueryBuilder($this->alias);
-        $queryBuilder->andWhere("{$this->alias}.lft>:lft")
-            ->setParameter('lft', $nestedSetEntity->getLft());
-
-        $queryBuilder->andWhere("{$this->alias}.rgt<:rgt")
-            ->setParameter('rgt', $nestedSetEntity->getRgt());
-
-        $queryBuilder->andWhere("{$this->alias}.tree=:tree")
-            ->setParameter('tree', $nestedSetEntity->getTree());
-
-        return $queryBuilder;
-    }
-
-    public function findNear(NodeInterface $node, bool $isUp = true): ?NodeInterface
-    {
-        $queryBuilder =  $this->createQueryBuilder($this->alias);
-
-        if ($isUp) {
-            $queryBuilder->andWhere("{$this->alias}.lft>:lft")->setParameter("lft", $node->getLft());
-        } else {
-            $queryBuilder->andWhere("{$this->alias}.rgt>:rgt")->setParameter("rgt", $node->getRgt());
-        }
-
-        return $queryBuilder
-            ->andWhere("{$this->alias}.tree=:tree")
-            ->setParameter("tree", $node->getTree())
-            ->orderBy("{$this->alias}.lft", "ASC")
-            ->setFirstResult(0)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    public function findExtreme(NodeInterface $node, bool $isFirst = true): ?NodeInterface
-    {
-        $queryBuilder =  $this->createQueryBuilder($this->alias);
-
-        if ($isFirst) {
-            $queryBuilder->andWhere("{$this->alias}.lft=:lft")->setParameter("lft", 1);
-        } else {
-            $queryBuilder->orderBy("{$this->alias}.lvl", "DESC");
-        }
-
-        return $queryBuilder
-            ->andWhere("{$this->alias}.tree=:tree")
-            ->setParameter("tree", $node->getTree())
-            ->setFirstResult(0)
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
 }
