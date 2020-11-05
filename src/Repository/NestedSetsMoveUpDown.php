@@ -87,7 +87,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
 
     private function findNear(NodeInterface $node, bool $isUp = true): ?NodeInterface
     {
-        $this->getgetEntityManager()->refresh($node);
+        $this->getEntityManager()->refresh($node);
 
         $sql = "SELECT * FROM `{$this->getTableName()}` WHERE ";
         $sql .= $isUp ? "`rgt` > {$node->getRgt()}" : "`lft` > {$node->getLft()}";
@@ -97,8 +97,17 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
 
         if (!empty($result)) {
-            return $this->getEntity($result['id'], $result['lft'], $result['rgt'], $result['lvl'], $result['tree']);
+            return $this->getEntity(
+                $result['id'],
+                $result['lft'],
+                $result['rgt'],
+                $result['lvl'],
+                $result['parent_id'],
+                $result['tree']
+            );
         }
+
+        return null;
     }
 
     private function findExtreme(NodeInterface $node, bool $isLast = true): ?NodeInterface
@@ -110,7 +119,15 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $sql .= " LIMIT 1";
         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
         if (!empty($result)) {
-            return $this->getEntity($result['id'], $result['lft'], $result['rgt'], $result['lvl'], $result['tree']);
+            return $this->getEntity(
+                $result['id'],
+                $result['lft'],
+                $result['rgt'],
+                $result['lvl'],
+                $result['parent_id'],
+                $result['tree']
+            );
         }
+        return null;
     }
 }

@@ -1,22 +1,16 @@
 <?php
 
-namespace MartenaSoft\Repository\NestedSets;
+namespace MartenaSoft\NestedSets\Repository;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\ORM\EntityManagerInterface;
-use MartenaSoft\Common\Entity\NestedSetEntityInterface;
-use MartenaSoft\Common\Repository\NestedSetServiceRepositoryInterface;
+use MartenaSoft\NestedSets\Entity\NodeInterface;
 use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
-use MartenaSoft\NestedSets\Repository\AbstractBase;
-use MartenaSoft\NestedSets\Repository\NestedSets;
-use MartenaSoft\NestedSets\Repository\NestedSetsMoveItemsInterface;
 
 class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInterface
 {
     private const MOVE_TMP_TABLE = '_move_tmp';
     private const MOVE_TMP_TABLE_ALL_NODES = '_move_tmp_all_nodes';
 
-    public function move(NestedSetEntityInterface $node, ?NestedSetEntityInterface $parent): void
+    public function move(NodeInterface $node, ?NodeInterface $parent): void
     {
         $moveTmpTable = $this->getMovedTemporaryTableName();
         $nsTableName = $this->getTableName();
@@ -64,7 +58,7 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                           AND `ns`.`tree` = {$node->getTree()}
                       ORDER BY `ns`.`lft` ";
 
-            $insertedLength = $this->getEntityManager()->getConnection()->executeQuery($sql);
+            $insertedLength = $this->getEntityManager()->getConnection()->executeQuery($sql)->rowCount();
 
             if ($insertedLength == 0) {
                 throw new \Exception('Inserted move users length is 0', 4);
@@ -72,7 +66,7 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
 
             $insertedLength *= 2;
 
-            $sql = NestedSets::getDeleteQuery($node, $tmpAllNodesTableName);
+            $sql = NestedSetsCreateDelete::getDeleteQuery($node, $tmpAllNodesTableName);
 
             $this->getEntityManager()->getConnection()->executeQuery($sql);
 
@@ -139,9 +133,11 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                 $this->getEntityManager()->getConnection()->executeQuery($sql);
             } else {
 
-                $maxTree = $this->getEntityManager()->getConnection()->fetchNumeric(
-                    NestedSets::getLastTreeIdSql($nsTableName)
+                $maxTree = (int)$this->getEntityManager()->getConnection()->fetchOne(
+                    NestedSetsCreateDelete::getLastTreeIdSql($nsTableName)
                 );
+
+                $maxTree++;
 
                 $sql = "@s_ := 0;";
                 $sql .= "INSERT INTO `{$tmpAllNodesTableName}` 
@@ -205,7 +201,7 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
         $tmpAllNodesTableName = $this->getMovedTemporaryTableNameForAllNodes();
        $sql = "DROP TABLE IF EXISTS `{$moveTmpTable}`;";
         $sql .= "DROP TABLE IF EXISTS `{$tmpAllNodesTableName}`;";
-        $this->getEntityManager()->getConnection()->execQuery($sql);
+        $this->getEntityManager()->getConnection()->executeQuery($sql);
     }
 }
 

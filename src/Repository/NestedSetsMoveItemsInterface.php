@@ -2,9 +2,9 @@
 
 namespace MartenaSoft\NestedSets\Repository;
 
-use MartenaSoft\Common\Entity\NestedSetEntityInterface;
+use MartenaSoft\NestedSets\Entity\NodeInterface;
 
 interface NestedSetsMoveItemsInterface
 {
-    public function move(NestedSetEntityInterface $node, ?NestedSetEntityInterface $parent): void;
+    public function move(NodeInterface $node, ?NodeInterface $parent): void;
 }
