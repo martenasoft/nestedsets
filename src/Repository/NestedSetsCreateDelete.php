@@ -79,7 +79,20 @@ class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDel
 
     public function delete(NodeInterface $node, bool $isSafeDelete = true): void
     {
+        if ($isSafeDelete) {
+            $sql = "UPDATE `{$this->getTableName()}` SET `is_deleted` = 1 WHERE `id` = {$node->getId()}";
+        } else {
+            $sql = $this->getDeleteQuery($node, $this->getTableName());
+        }
 
+        try {
+            $this->getEntityManager()->beginTransaction();
+            $this->getEntityManager()->getConnection()->executeQuery($sql);
+            $this->getEntityManager()->commit();
+        } catch (\Throwable $exception) {
+            throw $exception;
+            $this->getEntityManager()->rollback();
+        }
     }
 
     public static function getDeleteQuery (

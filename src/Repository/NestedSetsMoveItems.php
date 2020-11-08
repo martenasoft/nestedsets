@@ -24,6 +24,7 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                 `rgt` int unsigned DEFAULT NULL,          
                 `tree` int unsigned DEFAULT NULL,          
                 `parent_id` int unsigned DEFAULT NULL,
+                0 i
                 PRIMARY KEY (`id`)); ";
 
         $treeIdArray = [
@@ -41,7 +42,7 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                        `ns`.`rgt`, 
                        `ns`.`tree`, 
                        `ns`.`lvl`,
-                       0 i 
+                       '0' as i 
                     FROM `{$nsTableName}` `ns` 
                 WHERE `ns`.`tree` IN (" . implode(',', $treeIdArray) . ");";
 
@@ -139,18 +140,24 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
 
                 $maxTree++;
 
-                $sql = "@s_ := 0;";
+
+
+                $sql = "SET @s_ := 0;";
                 $sql .= "INSERT INTO `{$tmpAllNodesTableName}` 
                         SELECT IF (@s_ = 0, 0, parent_id),
-                               @s_ := 1,
+                               
                                lft - {$node->getLft()} + 1, 
                                rgt - {$node->getLft()} + 1,
                                " . ($maxTree + 1) . ",
                                (
-                                    (SELECT COUNT(*) FROM user_front_moved_users_ns_tmp t1 
+                                    IF (@s_ = 0, 1,   (SELECT COUNT(*) FROM `{$moveTmpTable}` t1 
                                         WHERE t1.lft < t2.lft AND t1.rgt>t2.rgt)  + 1
-                               )         
+                                    )
+                               ),
+                               @s_ := 1
                         FROM {$moveTmpTable} t2";
+
+
                 $this->getEntityManager()->getConnection()->executeQuery($sql);
             }
 

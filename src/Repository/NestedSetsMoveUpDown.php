@@ -8,7 +8,7 @@ use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
 
 class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownInterface
 {
-    public function change(NodeInterface $node, bool $isUp = true): void
+    public function upDown(NodeInterface $node, bool $isUp = true): void
     {
         try {
             $this->getEntityManager()->getConnection()->beginTransaction();
