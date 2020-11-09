@@ -3,6 +3,7 @@
 namespace MartenaSoft\NestedSets\Repository;
 
 use MartenaSoft\NestedSets\Entity\NodeInterface;
+use MartenaSoft\NestedSets\Exception\NestedSetsMoveUnderSelfException;
 use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
 
 class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInterface
@@ -12,11 +13,19 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
 
     public function move(NodeInterface $node, ?NodeInterface $parent): void
     {
+
         $moveTmpTable = $this->getMovedTemporaryTableName();
         $nsTableName = $this->getTableName();
         $tmpAllNodesTableName = $this->getMovedTemporaryTableNameForAllNodes();
 
         $this->deleteTemplateTables();
+
+        try {
+            $this->testIfMoveUnderSelf($node, $parent);
+        } catch (NestedSetsMoveUnderSelfException $exception) {
+            throw $exception;
+        }
+
 
         $sql = "CREATE TABLE IF NOT EXISTS `{$moveTmpTable}` (
                 `id` int unsigned NOT NULL AUTO_INCREMENT,                
@@ -24,7 +33,17 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                 `rgt` int unsigned DEFAULT NULL,          
                 `tree` int unsigned DEFAULT NULL,          
                 `parent_id` int unsigned DEFAULT NULL,
-                0 i
+                 i int unsigned DEFAULT NULL,
+                PRIMARY KEY (`id`)); ";
+
+        $sql .= "CREATE TABLE IF NOT EXISTS `{$tmpAllNodesTableName}` (
+                `id` int unsigned NOT NULL AUTO_INCREMENT,                
+                `parent_id` int unsigned DEFAULT NULL,
+                `lft` int unsigned DEFAULT NULL,
+                `rgt` int unsigned DEFAULT NULL,          
+                `tree` int unsigned DEFAULT NULL,          
+                `lvl` int unsigned DEFAULT NULL,
+                i int unsigned DEFAULT NULL,
                 PRIMARY KEY (`id`)); ";
 
         $treeIdArray = [
@@ -35,14 +54,14 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
             $treeIdArray[] = $parent->getTree();
         }
 
-        $sql .=  " CREATE TABLE `{$tmpAllNodesTableName}` 
+        $sql .=  " INSERT INTO `{$tmpAllNodesTableName}` 
                 SELECT `ns`.`id`, 
                        `ns`.`parent_id`, 
                        `ns`.`lft`, 
                        `ns`.`rgt`, 
                        `ns`.`tree`, 
                        `ns`.`lvl`,
-                       '0' as i 
+                       '0'  i 
                     FROM `{$nsTableName}` `ns` 
                 WHERE `ns`.`tree` IN (" . implode(',', $treeIdArray) . ");";
 
@@ -53,7 +72,13 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
 
         try {
             $sql = "INSERT INTO `{$moveTmpTable}` 
-                    SELECT `ns`.`id`, `ns`.`lft`, `ns`.`rgt`, `ns`.`tree`, `ns`.`parent_id` FROM `{$nsTableName}` `ns` 
+                    SELECT `ns`.`id`, 
+                           `ns`.`lft`, 
+                           `ns`.`rgt`, 
+                           `ns`.`tree`, 
+                           `ns`.`parent_id`,
+                           '0'  i  
+                    FROM `{$nsTableName}` `ns` 
                        WHERE `ns`.`lft` >= {$node->getLft()}
                           AND `ns`.`rgt` <= {$node->getRgt()}
                           AND `ns`.`tree` = {$node->getTree()}
@@ -139,16 +164,13 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
                 );
 
                 $maxTree++;
-
-
-
                 $sql = "SET @s_ := 0;";
                 $sql .= "INSERT INTO `{$tmpAllNodesTableName}` 
-                        SELECT IF (@s_ = 0, 0, parent_id),
+                        SELECT id, IF (@s_ = 0, 0, parent_id),
                                
                                lft - {$node->getLft()} + 1, 
                                rgt - {$node->getLft()} + 1,
-                               " . ($maxTree + 1) . ",
+                               {$maxTree}, 
                                (
                                     IF (@s_ = 0, 1,   (SELECT COUNT(*) FROM `{$moveTmpTable}` t1 
                                         WHERE t1.lft < t2.lft AND t1.rgt>t2.rgt)  + 1
@@ -173,6 +195,17 @@ class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInt
 
         if ($throwException instanceof \Throwable) {
             throw $throwException;
+        }
+    }
+
+    protected function testIfMoveUnderSelf(NodeInterface $node, ?NodeInterface $parent): void
+    {
+        if (!empty($parent) &&
+            $node->getTree() == $parent->getTree() &&
+            $node->getLft() <= $parent->getLft() &&
+            $node->getRgt() >= $parent->getRgt()) {
+
+            throw new NestedSetsMoveUnderSelfException();
         }
     }
 
