@@ -14,6 +14,8 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         try {
             $this->getEntityManager()->getConnection()->beginTransaction();
 
+            $this->findExtreme($node, $isUp);
+
             if ($node->getParentId() == 0) {
                 $this->moverRoot($node, $isUp);
             } else {
@@ -44,7 +46,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $near = $this->getNearRoot($node, $isUp);
 
         if (empty($near)) {
-            $near = $this->findExtremeRoot($node, !$isUp);
+            $near = $this->getFirstLastRoot($node, !$isUp);
         }
 
         $sql = "UPDATE `{$this->getTableName()}` SET `tree` = 0 WHERE `tree` = {$node->getTree()}; ";
@@ -72,7 +74,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
             $result['tree']);
     }
 
-    private function findExtremeRoot(NodeInterface $node, bool $isLast): ?NodeInterface
+    private function getFirstLastRoot(NodeInterface $node, bool $isLast): ?NodeInterface
     {
         $orderByType = $isLast ? "DESC" : "ASC";
         $sql = "SELECT * FROM {$this->getTableName()} ORDER BY `tree` $orderByType LIMIT 1";
