@@ -44,7 +44,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $near = $this->getNearRoot($node, $isUp);
 
         if (empty($near)) {
-            $near = $this->getFirstLastRoot($node, !$isUp);
+            $near = $this->findExtremeRoot($node, !$isUp);
         }
 
         $sql = "UPDATE `{$this->getTableName()}` SET `tree` = 0 WHERE `tree` = {$node->getTree()}; ";
@@ -72,7 +72,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
             $result['tree']);
     }
 
-    private function getFirstLastRoot(NodeInterface $node, bool $isLast): ?NodeInterface
+    private function findExtremeRoot(NodeInterface $node, bool $isLast): ?NodeInterface
     {
         $orderByType = $isLast ? "DESC" : "ASC";
         $sql = "SELECT * FROM {$this->getTableName()} ORDER BY `tree` $orderByType LIMIT 1";
@@ -148,9 +148,11 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $this->getEntityManager()->refresh($node);
 
         $sql = "SELECT * FROM `{$this->getTableName()}` WHERE ";
-        $sql .= $isUp ? "`rgt` > {$node->getRgt()}" : "`lft` > {$node->getLft()}";
-        $sql .= " AND `tree` = {$node->getTree()}";
-        $sql .= " ORDER BY `lft` ASC";
+        $sql .= $isUp ? "`lft` < {$node->getLft()}" : "`lft` > {$node->getLft()}";
+        //$sql .= $isUp ? "`rgt` < {$node->getRgt()}" : "`lft` > {$node->getLft()}";
+        $sql .= " AND `tree` = {$node->getTree()} AND `parent_id` > 0";
+        $sql .= " ORDER BY `lft` ";
+        $sql .= ($isUp ? "DESC" : "ASC");
         $sql .= " LIMIT 1";
         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
 
@@ -171,11 +173,12 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
     private function findExtreme(NodeInterface $node, bool $isLast = true): ?NodeInterface
     {
         $sql = "SELECT * FROM `{$this->getTableName()}` WHERE";
-        $sql .= !$isLast ? "`lft`= 1 AND " : "";
-        $sql .= " `tree` = {$node->getTree()}";
-        $sql .= $isLast ? " ORDER BY `lvl` DESC" : "";
+        $sql .= !$isLast ? "`lft`= 2 AND " : "" ." `parent_id` > 0 AND";
+        $sql .= "`tree` = {$node->getTree()}";
+        $sql .= $isLast ? " ORDER BY `rgt` DESC" : "";
         $sql .= " LIMIT 1";
-        $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+
         if (!empty($result)) {
             return $this->getEntity(
                 $result['id'],
