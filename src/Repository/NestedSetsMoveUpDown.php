@@ -17,7 +17,7 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
             $this->findExtreme($node, $isUp);
 
             if ($node->getParentId() == 0) {
-                $this->moverRoot($node, $isUp);
+                $this->moveRoot($node, $isUp);
             } else {
                 $nextNode = $this->findNear($node, $isUp);
 
@@ -40,10 +40,10 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         }
     }
 
-    private function moverRoot(NodeInterface $node, bool $isUp = true): int
+    private function moveRoot(NodeInterface $node, bool $isUp = true): int
     {
 
-        $near = $this->getNearRoot($node, $isUp);
+        $near = $this->getNearRoot($node, !$isUp);
 
         if (empty($near)) {
             $near = $this->getFirstLastRoot($node, !$isUp);
