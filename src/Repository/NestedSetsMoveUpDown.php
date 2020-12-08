@@ -5,6 +5,7 @@ namespace MartenaSoft\NestedSets\Repository;
 use MartenaSoft\NestedSets\DataDriver\DataDriverInterface;
 use MartenaSoft\NestedSets\Entity\NodeInterface;
 use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
+use PhpParser\Node;
 
 class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownInterface
 {
@@ -12,24 +13,83 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
     {
         try {
             $this->getEntityManager()->getConnection()->beginTransaction();
-            $nextNode = $this->findNear($node, $isUp);
 
-            if (empty($nextNode)) {
-                $nextNode = $this->findExtreme($node, $isUp);
+            $this->findExtreme($node, $isUp);
+
+            if ($node->getParentId() == 0) {
+                $this->moverRoot($node, $isUp);
+            } else {
+                $nextNode = $this->findNear($node, $isUp);
+
+                if (empty($nextNode)) {
+                    $nextNode = $this->findExtreme($node, $isUp);
+                }
+
+                if (empty($nextNode)) {
+                    throw new NestedSetsNodeNotFoundException();
+                }
+
+                $this->exchangeKeys($node, $nextNode);
+                $this->exchangeParentIdForSubItems($node, $nextNode);
             }
-
-            if (empty($nextNode)) {
-                throw new NestedSetsNodeNotFoundException();
-            }
-
-            $this->exchangeKeys($node, $nextNode);
-            $this->exchangeParentIdForSubItems($node, $nextNode);
 
             $this->getEntityManager()->getConnection()->commit();
         } catch (\Throwable $exception) {
             $this->getEntityManager()->getConnection()->rollback();
             throw $exception;
         }
+    }
+
+    private function moverRoot(NodeInterface $node, bool $isUp = true): int
+    {
+
+        $near = $this->getNearRoot($node, $isUp);
+
+        if (empty($near)) {
+            $near = $this->getFirstLastRoot($node, !$isUp);
+        }
+
+        $sql = "UPDATE `{$this->getTableName()}` SET `tree` = 0 WHERE `tree` = {$node->getTree()}; ";
+        $sql .= "UPDATE `{$this->getTableName()}` SET `tree` = {$node->getTree()} WHERE `tree` = {$near->getTree()}; ";
+        $sql .= "UPDATE `{$this->getTableName()}` SET `tree` = {$near->getTree()} WHERE `tree` = 0; ";
+
+        return $this->getEntityManager()->getConnection()->executeQuery($sql)->rowCount();
+    }
+
+    private function getNearRoot(NodeInterface $node, bool $isUp): ?NodeInterface
+    {
+        $z = $isUp ? " > " : " < ";
+        $sql = "SELECT * FROM {$this->getTableName()} WHERE `tree` {$z} {$node->getTree()} ORDER BY `tree` ASC";
+        $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+
+        if (empty($result)) {
+            return null;
+        }
+
+        return $this->getEntity(  $result['id'],
+            $result['lft'],
+            $result['rgt'],
+            $result['lvl'],
+            $result['parent_id'],
+            $result['tree']);
+    }
+
+    private function getFirstLastRoot(NodeInterface $node, bool $isLast): ?NodeInterface
+    {
+        $orderByType = $isLast ? "DESC" : "ASC";
+        $sql = "SELECT * FROM {$this->getTableName()} ORDER BY `tree` $orderByType LIMIT 1";
+        $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+
+        if (empty($result)) {
+            return null;
+        }
+
+        return $this->getEntity(  $result['id'],
+            $result['lft'],
+            $result['rgt'],
+            $result['lvl'],
+            $result['parent_id'],
+            $result['tree']);
     }
 
     private function exchangeKeys(NodeInterface $node1, NodeInterface $node2): ?int
@@ -90,9 +150,11 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $this->getEntityManager()->refresh($node);
 
         $sql = "SELECT * FROM `{$this->getTableName()}` WHERE ";
-        $sql .= $isUp ? "`rgt` > {$node->getRgt()}" : "`lft` > {$node->getLft()}";
-        $sql .= " AND `tree` = {$node->getTree()}";
-        $sql .= " ORDER BY `lft` ASC";
+        $sql .= $isUp ? "`lft` < {$node->getLft()}" : "`lft` > {$node->getLft()}";
+        //$sql .= $isUp ? "`rgt` < {$node->getRgt()}" : "`lft` > {$node->getLft()}";
+        $sql .= " AND `tree` = {$node->getTree()} AND `parent_id` > 0";
+        $sql .= " ORDER BY `lft` ";
+        $sql .= ($isUp ? "DESC" : "ASC");
         $sql .= " LIMIT 1";
         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
 
@@ -113,11 +175,12 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
     private function findExtreme(NodeInterface $node, bool $isLast = true): ?NodeInterface
     {
         $sql = "SELECT * FROM `{$this->getTableName()}` WHERE";
-        $sql .= !$isLast ? "`lft`= 1 AND " : "";
-        $sql .= " `tree` = {$node->getTree()}";
-        $sql .= $isLast ? " ORDER BY `lvl` DESC" : "";
+        $sql .= !$isLast ? "`lft`= 2 AND " : "" ." `parent_id` > 0 AND";
+        $sql .= "`tree` = {$node->getTree()}";
+        $sql .= $isLast ? " ORDER BY `rgt` DESC" : "";
         $sql .= " LIMIT 1";
-        $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+         $result = $this->getEntityManager()->getConnection()->fetchAssociative($sql);
+
         if (!empty($result)) {
             return $this->getEntity(
                 $result['id'],
@@ -130,4 +193,5 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         }
         return null;
     }
+
 }
