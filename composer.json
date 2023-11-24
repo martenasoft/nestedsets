@@ -1,6 +1,6 @@
 {
-    "name": "martenasoft/nestedsets",
-    "description": "MartenaSoft NestedSets Library",
+    "name": "martenasoft/Nestedsets",
+    "description": "MartenaSoft Nestedsets Library",
     "type": "library",
     "license": "MIT",
     "autoload": {

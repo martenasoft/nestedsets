@@ -1,10 +1,10 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Martenasoft\NestedSets\Entity\NodeInterface;
-use Martenasoft\NestedSets\Exception\NestedSetsException;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Exception\NestedSetsException;
 
 abstract class AbstractBase
 {

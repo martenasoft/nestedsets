@@ -1,8 +1,8 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
-use Martenasoft\NestedSets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
 
 interface NestedSetsMoveUpDownInterface
 {
