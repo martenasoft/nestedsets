@@ -1,0 +1,18 @@
+{
+    "name": "martenasoft/nestedsets",
+    "description": "MartenaSoft NestedSets Library",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Martenasoft\\Nestedsets\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Martenasoft",
+            "email": "martena.soft@gmail.com"
+        }
+    ],
+    "require": {}
+}

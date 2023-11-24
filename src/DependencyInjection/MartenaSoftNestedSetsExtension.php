@@ -1,6 +1,6 @@
 <?php
 
-namespace MartenaSoft\NestedSets\DependencyInjection;
+namespace Martenasoft\NestedSets\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;

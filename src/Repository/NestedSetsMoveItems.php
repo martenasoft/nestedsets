@@ -1,10 +1,10 @@
 <?php
 
-namespace MartenaSoft\NestedSets\Repository;
+namespace Martenasoft\NestedSets\Repository;
 
-use MartenaSoft\NestedSets\Entity\NodeInterface;
-use MartenaSoft\NestedSets\Exception\NestedSetsMoveUnderSelfException;
-use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
+use Martenasoft\NestedSets\Entity\NodeInterface;
+use Martenasoft\NestedSets\Exception\NestedSetsMoveUnderSelfException;
+use Martenasoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
 
 class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInterface
 {

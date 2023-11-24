@@ -1,6 +1,6 @@
 <?php
 
-namespace MartenaSoft\NestedSets\Exception;
+namespace Martenasoft\NestedSets\Exception;
 
 use Throwable;
 

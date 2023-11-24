@@ -1,6 +1,6 @@
 <?php
 
-namespace MartenaSoft\NestedSets\Entity;
+namespace Martenasoft\NestedSets\Entity;
 
 interface NodeInterface
 {

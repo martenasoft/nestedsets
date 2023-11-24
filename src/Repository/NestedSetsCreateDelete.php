@@ -1,8 +1,8 @@
 <?php
 
-namespace MartenaSoft\NestedSets\Repository;
+namespace Martenasoft\NestedSets\Repository;
 
-use MartenaSoft\NestedSets\Entity\NodeInterface;
+use Martenasoft\NestedSets\Entity\NodeInterface;
 
 class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDeleteInterface
 {

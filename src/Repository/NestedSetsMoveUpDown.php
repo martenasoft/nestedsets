@@ -1,10 +1,10 @@
 <?php
 
-namespace MartenaSoft\NestedSets\Repository;
+namespace Martenasoft\NestedSets\Repository;
 
-use MartenaSoft\NestedSets\DataDriver\DataDriverInterface;
-use MartenaSoft\NestedSets\Entity\NodeInterface;
-use MartenaSoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
+use Martenasoft\NestedSets\DataDriver\DataDriverInterface;
+use Martenasoft\NestedSets\Entity\NodeInterface;
+use Martenasoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
 use PhpParser\Node;
 
 class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownInterface
