@@ -1,10 +1,11 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
-use Martenasoft\NestedSets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Repository\Interfaces\NestedSetsCreateDeleteInterface;
 
-class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDeleteInterface
+class NestedsetsCreateDelete extends AbstractBase implements NestedSetsCreateDeleteInterface
 {
     public function create(NodeInterface $nestedSetEntity, ?NodeInterface $parent = null): NodeInterface
     {
@@ -56,12 +57,14 @@ class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDel
                 $parentId = 0;
             }
 
+            $parent = $this->getEntityById($parentId);
+
             $nestedSetEntity
                 ->setLft($lft)
                 ->setLvl($lvl)
                 ->setTree($tree)
                 ->setRgt($rgt)
-                ->setParentId($parentId);
+                ->setParent($parent);
 
             $this->getEntityManager()->persist($nestedSetEntity);
             $this->getEntityManager()->flush();
@@ -99,8 +102,8 @@ class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDel
         NodeInterface $nestedSetEntity,
         string $tableName
     ): string {
-
-        $sql = "DELETE FROM `{$tableName}` 
+        $sql = "SET FOREIGN_KEY_CHECKS = 0;";
+        $sql .= "DELETE FROM `{$tableName}` 
                     WHERE lft >= {$nestedSetEntity->getLft()} 
                         AND rgt <= {$nestedSetEntity->getRgt()} 
                         AND tree = {$nestedSetEntity->getTree()};";
@@ -111,7 +114,7 @@ class NestedSetsCreateDelete extends AbstractBase implements NestedSetsCreateDel
                     rgt = rgt- (((( {$nestedSetEntity->getRgt()} - {$nestedSetEntity->getLft()} - 1) / 2) + 1)*2)
 
                  WHERE rgt > {$nestedSetEntity->getRgt()} AND tree = {$nestedSetEntity->getTree()};";
-
+        $sql .= "SET FOREIGN_KEY_CHECKS = 1;";
         return $sql;
     }
 

@@ -1,11 +1,11 @@
 <?php
 
-namespace Martenasoft\NestedSets;
+namespace Martenasoft\Nestedsets;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class MartenasoftNestedSetsBundle extends Bundle
+class MartenasoftNestedsetsBundle extends Bundle
 {
     public function build(ContainerBuilder $container)
     {

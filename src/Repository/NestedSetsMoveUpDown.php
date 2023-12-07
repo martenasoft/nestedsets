@@ -1,13 +1,13 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
-use Martenasoft\NestedSets\DataDriver\DataDriverInterface;
-use Martenasoft\NestedSets\Entity\NodeInterface;
-use Martenasoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
-use PhpParser\Node;
+use Martenasoft\Nestedsets\DataDriver\DataDriverInterface;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Exception\NestedSetsNodeNotFoundException;
+use Martenasoft\Nestedsets\Repository\Interfaces\NestedSetsMoveUpDownInterface;
 
-class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownInterface
+class NestedsetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownInterface
 {
     public function upDown(NodeInterface $node, bool $isUp = true): void
     {
@@ -15,8 +15,10 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
             $this->getEntityManager()->getConnection()->beginTransaction();
 
             $this->findExtreme($node, $isUp);
+            $parent = $node->getParent();
 
-            if ($node->getParentId() == 0) {
+
+            if (empty($parent) || empty($parent->getId())) {
                 $this->moveRoot($node, $isUp);
             } else {
                 $nextNode = $this->findNear($node, $isUp);
@@ -98,13 +100,17 @@ class NestedSetsMoveUpDown extends AbstractBase implements NestedSetsMoveUpDownI
         $rgt = $node1->getRgt();
         $lvl = $node1->getLvl();
 
-        $parentId = $node1->getParentId();
+        $parent = $node1->getParent();
+        $parent2 = $node2->getParent();
+
+        $parentId = (empty($parent) || empty($parent->getId()) ? 'NULL' : $parent->getId());
+        $parent2Id = (empty($parent2) || empty($parent2->getId()) ? 'NULL' : $parent2->getId());
 
         $sql = "UPDATE `{$this->getTableName()}` SET 
                             `lft` = {$node2->getLft()},
                             `rgt` = {$node2->getRgt()},
                             `lvl` = {$node2->getLvl()},                          
-                            `parent_id` = {$node2->getParentId()}                          
+                            `parent_id` = {$parent2Id}                          
                          WHERE `id` = {$node1->getId()} AND `tree` = {$node1->getTree()}       
                     ;";
 

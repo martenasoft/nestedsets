@@ -1,12 +1,13 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
-use Martenasoft\NestedSets\Entity\NodeInterface;
-use Martenasoft\NestedSets\Exception\NestedSetsMoveUnderSelfException;
-use Martenasoft\NestedSets\Exception\NestedSetsNodeNotFoundException;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Exception\NestedSetsMoveUnderSelfException;
+use Martenasoft\Nestedsets\Exception\NestedSetsNodeNotFoundException;
+use Martenasoft\Nestedsets\Repository\Interfaces\NestedSetsMoveItemsInterface;
 
-class NestedSetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInterface
+class NestedsetsMoveItems extends AbstractBase implements NestedSetsMoveItemsInterface
 {
     private const MOVE_TMP_TABLE = '_move_tmp';
     private const MOVE_TMP_TABLE_ALL_NODES = '_move_tmp_all_nodes';

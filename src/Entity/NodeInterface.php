@@ -1,6 +1,6 @@
 <?php
 
-namespace Martenasoft\NestedSets\Entity;
+namespace Martenasoft\Nestedsets\Entity;
 
 interface NodeInterface
 {
@@ -22,6 +22,6 @@ interface NodeInterface
     public function getLvl(): ?int;
     public function setLvl(?int $lft): self;
 
-    public function getParentId(): ?int;
-    public function setParentId(?int $parentId): self;
+    public function getParent(): ?NodeInterface;
+    public function setParent(?NodeInterface $parent): self;
 }

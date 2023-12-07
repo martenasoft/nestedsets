@@ -1,10 +1,10 @@
 <?php
 
-namespace Martenasoft\NestedSets\Repository;
+namespace Martenasoft\Nestedsets\Repository;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Martenasoft\NestedSets\Entity\NodeInterface;
-use Martenasoft\NestedSets\Exception\NestedSetsException;
+use Martenasoft\Nestedsets\Entity\NodeInterface;
+use Martenasoft\Nestedsets\Exception\NestedSetsException;
 
 abstract class AbstractBase
 {
@@ -36,13 +36,15 @@ abstract class AbstractBase
 
     protected function getEntity(int $id, int $lft, int $rgt, int $lvl, int $parentId, int $tree): ?NodeInterface
     {
+        $parent = $this->getEntityById($parentId);
+
         $node = new $this->entityClassName();
         $node
             ->setId($id)
             ->setLft($lft)
             ->setRgt($rgt)
             ->setLvl($lvl)
-            ->setParentId($parentId)
+            ->setParent($parent)
             ->setTree($tree);
         return $node;
     }
@@ -55,5 +57,14 @@ abstract class AbstractBase
     protected function getEntityManager(): EntityManagerInterface
     {
         return $this->entityManager;
+    }
+
+    protected function getEntityById(?int $id): ?NodeInterface
+    {
+        if (empty($id)) {
+            return null;
+        }
+
+       return  $this->getEntityManager()->find($this->entityClassName, $id);
     }
 }
